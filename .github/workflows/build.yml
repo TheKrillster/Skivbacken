@@ -1,0 +1,40 @@
+name: Bygg APK
+
+on:
+  push:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Packa upp projektet
+        run: if [ -f Skivbacken.zip ]; then unzip -o -q Skivbacken.zip; fi
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: "8.11.1"
+
+      - name: Bygg appen
+        run: |
+          if [ -d Skivbacken ]; then cd Skivbacken; fi
+          gradle assembleDebug --no-daemon
+          cp "$(find . -name app-debug.apk | head -1)" "$GITHUB_WORKSPACE/Skivbacken.apk"
+
+      - name: Lägg ut APK-filen
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: build-${{ github.run_number }}
+          name: Skivbacken ${{ github.run_number }}
+          files: Skivbacken.apk
+          make_latest: true

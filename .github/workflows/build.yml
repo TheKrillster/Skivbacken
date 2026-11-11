@@ -12,9 +12,19 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
+      # Uses the zip uploaded most recently, whatever the phone named it
+      # (Skivbacken.zip, Skivbacken (1).zip, ...).
       - name: Packa upp projektet
-        run: if [ -f Skivbacken.zip ]; then unzip -o -q Skivbacken.zip; fi
+        run: |
+          latest="$(git log --diff-filter=AM --name-only --pretty=format: -- '*.zip' | grep -m1 . || true)"
+          if [ -n "$latest" ]; then
+            echo "Bygger från: $latest"
+            rm -rf Skivbacken
+            unzip -o -q "$latest"
+          fi
 
       - uses: actions/setup-java@v4
         with:
